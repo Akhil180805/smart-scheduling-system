@@ -9,9 +9,10 @@ interface GenerationParams {
     startTime: string;
     endTime: string;
     lectureDuration: number;
+    labDuration: number;
+    breakDuration: number;
     startDate: string;
     endDate: string;
-    includeBreak: boolean;
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
@@ -19,32 +20,53 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 export const generateTimetableAI = async (params: GenerationParams) => {
     const {
         year, semester, subjects, teachers,
-        startTime, endTime, lectureDuration,
-        startDate, endDate, includeBreak
+        startTime, endTime, lectureDuration, labDuration, breakDuration,
+        startDate, endDate
     } = params;
 
     const teacherList = teachers.map(t => t.name).join(', ');
-    const subjectList = subjects.map(s => s.name).join(', ');
-    
-    const breakInstruction = includeBreak 
-        ? '8. Include a 60-minute lunch break each day. This break should ideally be after the 4th lecture of the day. Do not schedule any lectures during this break time. Represent the break in the schedule with the subject "Lunch Break" and teacher as "N/A".' 
-        : '';
-    const finalConstraintNumber = includeBreak ? 8 : 7;
+    const subjectList = subjects.map(s => `"${s.name}" (Taught by ${s.defaultTeacher})`).join(', ');
+    const labSubjectsCount = subjects.filter(s => s.name.toLowerCase().includes('lab')).length;
 
     const prompt = `
-        You are an expert university timetable scheduler. Your task is to generate a schedule for the ${year}, ${semester}.
-        The schedule should cover all weekdays (Monday to Friday) from the start date ${startDate} to the end date ${endDate}.
-        
-        Constraints:
-        1. Lectures must be scheduled between ${startTime} and ${endTime} on weekdays (Monday to Friday).
-        2. Each lecture duration is ${lectureDuration} minutes.
-        3. The subjects to be scheduled are: ${subjectList}.
-        4. The available teachers are: ${teacherList}.
-        5. A teacher cannot teach two different classes at the same time.
-        6. A single year/semester group cannot have two different lectures at the same time.
-        7. Distribute the lectures as evenly as possible throughout the week.
-        ${breakInstruction}
-        
+        You are an expert university timetable scheduler. Your task is to generate a highly structured and realistic daily schedule for the ${year}, ${semester}.
+        The schedule must cover all weekdays (Monday to Friday) from the start date ${startDate} to the end date ${endDate}.
+
+        **Available Resources:**
+        - Subjects to be scheduled: ${subjectList}.
+        - The total number of lab subjects selected is ${labSubjectsCount}.
+
+        **Daily Structure and Rules (Strictly follow these):**
+
+        1.  **Flexible Lab Scheduling**:
+            *   Based on the number of lab subjects, you must decide whether to schedule **one or two labs per day** to fit all selected labs within the week.
+            *   If a day has **one lab**, the schedule must contain **six (6) standard lectures**.
+            *   If a day has **two labs**, the schedule must contain **four (4) standard lectures** to balance the total time.
+            *   Distribute lab sessions as evenly as possible throughout the week.
+
+        2.  **Session Durations**:
+            *   Standard lecture duration is **${lectureDuration} minutes**.
+            *   Lab session duration is **${labDuration} minutes**.
+
+        3.  **Daily Schedule Layout**:
+            *   **Morning Session**: Consists of four (4) consecutive sessions.
+            *   **Lunch Break**: A mandatory **${breakDuration}-minute break** MUST follow immediately after the fourth morning session. Represent this with subject="Lunch Break", teacher="N/A", and room="N/A".
+            *   **Afternoon Session**: Consists of the remaining sessions for the day.
+
+        4.  **Time Calculation**:
+            *   Start the first lecture at ${startTime}.
+            *   Calculate all time slots sequentially based on their duration. For example, if start time is 09:00 and lecture duration is 45 mins, the first lecture is "09:00 - 09:45", the second is "09:45 - 10:30", and so on.
+
+        5.  **Room Allocation (CRITICAL)**:
+            *   You MUST assign a room number to every lecture and lab.
+            *   **Lecture Hall**: All standard (non-lab) lectures for this year (${year}) must be assigned to a single, consistent room number. The room number should be based on the year (e.g., 'Room 101' for First Year, 'Room 201' for Second Year, 'Room 301' for Third Year).
+            *   **Lab Rooms**: Each lab session MUST be assigned a separate, dedicated lab room number (e.g., 'Lab 151', 'Lab 152', 'Lab 251'). Lab rooms for a year should follow a consistent numbering scheme. Do not use the lecture hall for labs.
+
+        6.  **Subject and Teacher Constraints**:
+            *   Prioritize scheduling subjects with "Lab" in their name into the lab slots.
+            *   Each subject MUST be taught by its pre-assigned default teacher.
+            *   A teacher cannot teach two different classes at the same time.
+
         Generate a JSON output that adheres to the provided schema. The output should be a single JSON object with no extra text or markdown.
     `;
 
@@ -70,11 +92,12 @@ export const generateTimetableAI = async (params: GenerationParams) => {
                                         items: {
                                             type: Type.OBJECT,
                                             properties: {
-                                                time: { type: Type.STRING, description: "Time slot (e.g., 09:00 - 10:00)." },
+                                                time: { type: Type.STRING, description: "Time slot (e.g., 09:00 - 09:45)." },
                                                 subject: { type: Type.STRING, description: "Subject name." },
                                                 teacher: { type: Type.STRING, description: "Teacher's name." },
+                                                room: { type: Type.STRING, description: "Assigned room number (e.g., Room 101, Lab 151)." }
                                             },
-                                            required: ["time", "subject", "teacher"],
+                                            required: ["time", "subject", "teacher", "room"],
                                         },
                                     },
                                 },

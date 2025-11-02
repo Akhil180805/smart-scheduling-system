@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { MOCK_SUBJECTS_BY_DEPT, DEPARTMENTS } from '../../services/mockData';
@@ -7,6 +8,7 @@ import Button from '../../components/common/Button';
 import Select from '../../components/common/Select';
 import Input from '../../components/common/Input';
 import { Timetable, Subject, Teacher } from '../../types';
+import { ChevronLeftIcon } from '../../components/icons/Icons';
 
 interface GenerateTimetableProps {
     setView: (view: 'dashboard' | 'generate' | 'teachers' | 'classes') => void;
@@ -19,12 +21,13 @@ const GenerateTimetable: React.FC<GenerateTimetableProps> = ({ setView }) => {
     const [semester, setSemester] = useState('Semester 1');
     const [startTime, setStartTime] = useState('09:00');
     const [endTime, setEndTime] = useState('17:00');
-    const [lectureDuration, setLectureDuration] = useState(60);
+    const [lectureDuration, setLectureDuration] = useState(45);
+    const [labDuration, setLabDuration] = useState(120);
+    const [breakDuration, setBreakDuration] = useState(60);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 4); // Default to a 1 week schedule (Mon-Fri)
     const [endDate, setEndDate] = useState(tomorrow.toISOString().split('T')[0]);
-    const [includeBreak, setIncludeBreak] = useState(true);
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -79,7 +82,7 @@ const GenerateTimetable: React.FC<GenerateTimetableProps> = ({ setView }) => {
 
         try {
             const result = await generateTimetableAI({
-                year, semester, subjects: selectedSubjects, teachers: selectedTeachers, startTime, endTime, lectureDuration, startDate, endDate, includeBreak
+                year, semester, subjects: selectedSubjects, teachers: selectedTeachers, startTime, endTime, lectureDuration, labDuration, breakDuration, startDate, endDate
             });
             
             const newTimetable: Timetable = {
@@ -104,6 +107,10 @@ const GenerateTimetable: React.FC<GenerateTimetableProps> = ({ setView }) => {
 
     return (
         <div className="bg-white p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+            <button onClick={() => setView('dashboard')} className="flex items-center text-sm font-semibold text-gray-600 hover:text-gray-900 mb-4">
+                <ChevronLeftIcon />
+                <span className="ml-1">Back to Dashboard</span>
+            </button>
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Generate New Timetable</h1>
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -132,14 +139,15 @@ const GenerateTimetable: React.FC<GenerateTimetableProps> = ({ setView }) => {
                     </div>
                     <Input label="Start Time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
                     <Input label="End Time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
-                    <Input label="Lecture Duration (minutes)" type="number" value={lectureDuration} onChange={e => setLectureDuration(parseInt(e.target.value))} />
-                    <div/>
+                    
+                    <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <Input label="Lecture Duration (min)" type="number" value={lectureDuration} onChange={e => setLectureDuration(parseInt(e.target.value))} />
+                        <Input label="Lab Duration (min)" type="number" value={labDuration} onChange={e => setLabDuration(parseInt(e.target.value))} />
+                        <Input label="Break Duration (min)" type="number" value={breakDuration} onChange={e => setBreakDuration(parseInt(e.target.value))} />
+                    </div>
+                    
                     <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                     <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-                     <div className="md:col-span-2 flex items-center mt-2">
-                        <input type="checkbox" id="include-break" checked={includeBreak} onChange={e => setIncludeBreak(e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                        <label htmlFor="include-break" className="ml-2 block text-sm text-gray-900">Include a lunch break (after 4th lecture)</label>
-                    </div>
 
                 </div>
                 {error && <p className="text-red-500 mt-4 text-center font-medium">{error}</p>}

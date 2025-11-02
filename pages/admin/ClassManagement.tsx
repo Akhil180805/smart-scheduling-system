@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Timetable, Lecture } from '../../types';
@@ -123,6 +124,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ setView }) => {
                                         <th className="px-4 py-2 font-semibold">Day</th>
                                         <th className="px-4 py-2 font-semibold">Time</th>
                                         <th className="px-4 py-2 font-semibold">Subject</th>
+                                        <th className="px-4 py-2 font-semibold">Room</th>
                                         <th className="px-4 py-2 font-semibold">Teacher</th>
                                         <th className="px-4 py-2 font-semibold text-right">Actions</th>
                                     </tr>
@@ -134,6 +136,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ setView }) => {
                                                 {lectureIndex === 0 && <td rowSpan={day.lectures.length} className="px-4 py-3 font-medium text-gray-800 align-top">{day.day}</td>}
                                                 <td className="px-4 py-3 whitespace-nowrap">{lecture.time}</td>
                                                 <td className="px-4 py-3">{lecture.subject}</td>
+                                                <td className="px-4 py-3">{lecture.room}</td>
                                                 <td className="px-4 py-3">{lecture.teacher}</td>
                                                 <td className="px-4 py-3 text-right">
                                                      {lecture.subject !== 'Lunch Break' && (

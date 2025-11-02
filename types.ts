@@ -28,6 +28,7 @@ export interface Lecture {
   subject: string;
   teacher: string;
   isBreak?: boolean;
+  room?: string;
 }
 
 export interface DaySchedule {

@@ -32,6 +32,7 @@ export const MOCK_TEACHERS: Teacher[] = [
   { id: 't113', name: 'Manthan Joshi', email: 'manthan@test.com', role: 'teacher', subjects: ['Project Management'], phoneNumber: '234-444-5555', age: 37, location: 'Mumbai, IN', qualification: 'M.Tech CSE', experience: '9 Years', department: 'Information Technology', yearSpecialization: 'Second Year' },
   { id: 't114', name: 'Reena Ostwal', email: 'reena@test.com', role: 'teacher', subjects: ['Networks'], phoneNumber: '234-555-6666', age: 45, location: 'Pune, IN', qualification: 'Ph.D. in CSE', experience: '17 Years', department: 'Information Technology', yearSpecialization: 'Second Year' },
   { id: 't115', name: 'Madhuri Gedam', email: 'madhuri@test.com', role: 'teacher', subjects: ['Unix'], phoneNumber: '234-666-7777', age: 49, location: 'Mumbai, IN', qualification: 'M.Tech IT', experience: '19 Years', department: 'Information Technology', yearSpecialization: 'Second Year' },
+  { id: 't116', name: 'Akhil Varma', email: 'akhil@test.com', role: 'teacher', subjects: ['Workshop Lab'], phoneNumber: '234-777-8888', age: 35, location: 'Mumbai, IN', qualification: 'B.E. Mechanical', experience: '7 Years', department: 'Information Technology', yearSpecialization: 'First Year' },
 ];
 
 export const MOCK_SUBJECTS_BY_DEPT: { [key: string]: { [key: string]: { [key: string]: Subject[] } } } = {
@@ -48,6 +49,7 @@ export const MOCK_SUBJECTS_BY_DEPT: { [key: string]: { [key: string]: { [key: st
           { name: 'Chemistry 1 Lab', code: 'CSE108L', defaultTeacher: 'Lahu Teli' },
           { name: 'Bee Lab', code: 'CSE109L', defaultTeacher: 'Dipti Kale' },
           { name: 'Mechanic Lab', code: 'CSE110L', defaultTeacher: 'Bhavik Modi' },
+          { name: 'Workshop Lab', code: 'CSE111L', defaultTeacher: 'Akhil Varma' },
       ],
       'Semester 2': [
           { name: 'Engineering Mathematics-II', code: 'CSE201', defaultTeacher: 'Usha Bag' },

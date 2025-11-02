@@ -1,8 +1,9 @@
+
+
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-// FIX: Import ChartBarIcon to resolve missing component error.
-import { CalendarIcon, ClockIcon, CollectionIcon, UserIcon, LogoutIcon, CalendarScheduleIcon, DownloadIcon, BookOpenIcon, ChartBarIcon } from '../../components/icons/Icons';
+import { CalendarIcon, ClockIcon, CollectionIcon, UserIcon, LogoutIcon, CalendarScheduleIcon, DownloadIcon, BookOpenIcon, ChartBarIcon, ChevronLeftIcon } from '../../components/icons/Icons';
 import Button from '../../components/common/Button';
 import { Teacher, Timetable } from '../../types';
 import Input from '../../components/common/Input';
@@ -69,7 +70,7 @@ const TeacherDashboard: React.FC = () => {
     const handleDownloadToday = () => {
         const header = `Today's Schedule for ${teacherUser.name}\nDate: ${new Date().toLocaleDateString()}\n\n`;
         const scheduleText = todaysSchedule.flatMap(daySchedule => 
-            daySchedule.lectures.map(l => `  • ${l.time}: ${l.subject}`)
+            daySchedule.lectures.map(l => `  • ${l.time}: ${l.subject} (Room: ${l.room || 'N/A'})`)
         ).join('\n');
         const content = header + (scheduleText.length > 0 ? scheduleText : "No lectures scheduled for today.");
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -85,6 +86,61 @@ const TeacherDashboard: React.FC = () => {
     
     const renderContent = () => {
         switch (activeView) {
+            case 'schedules':
+                return (
+                    <div>
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Full Schedule</h1>
+                                <p className="text-gray-500 mt-1">All your assigned timetables, past, present, and future.</p>
+                            </div>
+                            <Button variant="secondary" onClick={() => setActiveView('dashboard')}>
+                                <ChevronLeftIcon /> <span className="ml-2 hidden sm:inline">Back to Dashboard</span>
+                            </Button>
+                        </div>
+                        <div className="space-y-6">
+                            {teacherTimetables.length > 0 ? teacherTimetables.map(timetable => (
+                                <div key={timetable.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 sm:p-6">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-gray-800">{timetable.year} - {timetable.semester}</h2>
+                                            <p className="text-sm text-gray-500">{timetable.department} ({timetable.startDate} to {timetable.endDate})</p>
+                                        </div>
+                                         <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-3 py-1 rounded-full mt-2 sm:mt-0">{timetable.schedule.reduce((acc, d) => acc + d.lectures.length, 0)} Lectures</span>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="text-xs text-gray-700 uppercase bg-gray-50/50">
+                                                <tr>
+                                                    <th className="px-4 py-2 font-semibold">Day</th>
+                                                    <th className="px-4 py-2 font-semibold">Time</th>
+                                                    <th className="px-4 py-2 font-semibold">Subject</th>
+                                                    <th className="px-4 py-2 font-semibold">Room</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="text-gray-600">
+                                                {timetable.schedule.flatMap((day, dayIndex) => 
+                                                    day.lectures.map((lecture, lectureIndex) => (
+                                                        <tr key={`${day.day}-${lecture.time}`} className="border-b border-gray-100 last:border-b-0">
+                                                            {lectureIndex === 0 && <td rowSpan={day.lectures.length} className="px-4 py-3 font-medium text-gray-800 align-top">{day.day}</td>}
+                                                            <td className="px-4 py-3 whitespace-nowrap">{lecture.time}</td>
+                                                            <td className="px-4 py-3">{lecture.subject}</td>
+                                                            <td className="px-4 py-3">{lecture.room}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-10 text-center">
+                                    <p className="text-gray-500">You have not been assigned to any schedules yet.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
             case 'profile':
                 const initials = teacherUser.name.split(' ').map(n => n[0]).join('').toUpperCase();
                 return (
@@ -166,7 +222,6 @@ const TeacherDashboard: React.FC = () => {
                                     <p className="text-gray-500">{teacherUser.email}</p>
                                 </div>
                                 <div className="flex items-center space-x-3 mt-4 sm:mt-0 sm:ml-auto">
-                                    <Button variant="secondary" size="sm" onClick={() => setActiveView('schedules')}><BookOpenIcon className="h-4 w-4" /><span className="ml-2">View Full Timetable</span></Button>
                                     <Button variant="secondary" size="sm" onClick={handleDownloadToday}><DownloadIcon className="h-4 w-4" /><span className="ml-2">Download Today's Schedule</span></Button>
                                 </div>
                             </div>
@@ -185,9 +240,10 @@ const TeacherDashboard: React.FC = () => {
                                     {todaysSchedule.length > 0 ? todaysSchedule.map((day, i) => (
                                         <div key={i}>
                                             {day.lectures.map((lecture, j) => (
-                                                <div key={j} className="p-3 bg-gray-50 border-l-4 border-purple-400 rounded-r-md">
+                                                <div key={j} className="p-4 bg-gray-50 border-l-4 border-purple-400 rounded-r-md mb-2">
                                                     <p className="font-bold text-sm text-purple-600">{lecture.time}</p>
                                                     <p className="text-gray-800 font-medium">{lecture.subject}</p>
+                                                    {lecture.room && lecture.room !== "N/A" && <p className="text-xs text-gray-500 mt-1">Room: {lecture.room}</p>}
                                                 </div>
                                             ))}
                                         </div>
@@ -215,7 +271,7 @@ const TeacherDashboard: React.FC = () => {
         }
     };
     
-    const HeaderButton: React.FC<{label: string, view: 'dashboard' | 'profile', icon: React.ReactNode}> = ({ label, view, icon }) => (
+    const HeaderButton: React.FC<{label: string, view: 'dashboard' | 'profile' | 'schedules', icon: React.ReactNode}> = ({ label, view, icon }) => (
          <button onClick={() => setActiveView(view)} className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeView === view ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>
             {icon}
             <span className="ml-2">{label}</span>
@@ -239,6 +295,7 @@ const TeacherDashboard: React.FC = () => {
                         <div className="flex items-center space-x-2">
                             <div className="hidden sm:flex items-center p-1 bg-gray-100 rounded-lg">
                                 <HeaderButton label="Dashboard" view="dashboard" icon={<ChartBarIcon className="h-4 w-4" />} />
+                                <HeaderButton label="My Full Schedule" view="schedules" icon={<BookOpenIcon className="h-4 w-4" />} />
                                 <HeaderButton label="Profile" view="profile" icon={<UserIcon className="h-4 w-4" />} />
                             </div>
                              <button onClick={logout} className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors">
@@ -251,8 +308,9 @@ const TeacherDashboard: React.FC = () => {
             </header>
             <main className="container mx-auto p-4 sm:p-6 lg:p-8">
                 <div className="sm:hidden flex items-center p-1 bg-gray-100 rounded-lg mb-4">
-                    <button onClick={() => setActiveView('dashboard')} className={`w-1/2 py-2 text-sm font-medium rounded-lg ${activeView === 'dashboard' ? 'bg-white shadow' : ''}`}>Dashboard</button>
-                    <button onClick={() => setActiveView('profile')} className={`w-1/2 py-2 text-sm font-medium rounded-lg ${activeView === 'profile' ? 'bg-white shadow' : ''}`}>Profile</button>
+                    <button onClick={() => setActiveView('dashboard')} className={`w-1/3 py-2 text-sm font-medium rounded-lg ${activeView === 'dashboard' ? 'bg-white shadow' : ''}`}>Dashboard</button>
+                    <button onClick={() => setActiveView('schedules')} className={`w-1/3 py-2 text-sm font-medium rounded-lg ${activeView === 'schedules' ? 'bg-white shadow' : ''}`}>My Full Schedule</button>
+                    <button onClick={() => setActiveView('profile')} className={`w-1/3 py-2 text-sm font-medium rounded-lg ${activeView === 'profile' ? 'bg-white shadow' : ''}`}>Profile</button>
                 </div>
                 {renderContent()}
             </main>
